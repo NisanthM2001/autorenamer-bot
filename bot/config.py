@@ -1,5 +1,5 @@
 """
-Configuration for AutoRenamer Bot - MongoDB Edition
+AutoRenamer Bot Configuration
 Reads credentials from environment variables
 """
 import os
@@ -18,8 +18,6 @@ class Config:
     
     # ============ MONGODB CONFIGURATION ============
     MONGODB_URL = os.getenv("DATABASE_URL", "mongodb://localhost:27017")
-    MONGODB_DB_NAME = "autorenamer"
-    MONGODB_COLLECTION = "settings"
     
     # ============ BOT SETTINGS ============
     DOWNLOAD_DIR = "downloads"
@@ -47,32 +45,32 @@ class Config:
     SUPPORTED_SUBTITLES = ["English", "Hindi", "Telugu", "Kannada", "Tamil", "Malayalam", "Punjabi"]
     
     # ============ CHANNEL SETTINGS ============
-    SOURCE_CHANNELS = []
-    DESTINATION_CHANNELS = []
+    SOURCE_CHANNEL_IDS = []
+    DESTINATION_CHANNEL_IDS = []
     
     # ============ MESSAGE RANGE ============
-    START_MESSAGE_LINK = None
-    END_MESSAGE_LINK = None
+    START_LINK = None
+    END_LINK = None
     
     @classmethod
     def is_configured(cls):
-        """Check if essential configurations are set"""
-        configured = all([
-            cls.API_ID and cls.API_ID != 0,
-            cls.API_HASH and cls.API_HASH != "",
-            cls.BOT_TOKEN and cls.BOT_TOKEN != "",
-            cls.OWNER_ID and cls.OWNER_ID != 0,
+        """Check if all credentials are properly configured"""
+        return all([
+            cls.API_ID != 0,
+            cls.API_HASH and cls.API_HASH.strip() != "",
+            cls.BOT_TOKEN and cls.BOT_TOKEN.strip() != "",
+            cls.OWNER_ID != 0,
         ])
-        return configured
     
     @classmethod
     def get_info(cls):
         """Get configuration information"""
         return {
-            "api_configured": bool(cls.API_ID and cls.API_HASH),
+            "api_configured": bool(cls.API_ID != 0 and cls.API_HASH),
             "bot_token_set": bool(cls.BOT_TOKEN),
-            "owner_id_set": bool(cls.OWNER_ID),
-            "mongodb_configured": bool(cls.MONGODB_URL and "mongodb" in cls.MONGODB_URL),
-            "source_channels": len(cls.SOURCE_CHANNELS),
-            "destination_channels": len(cls.DESTINATION_CHANNELS),
+            "owner_id_set": bool(cls.OWNER_ID != 0),
+            "source_channels": len(cls.SOURCE_CHANNEL_IDS),
+            "destination_channels": len(cls.DESTINATION_CHANNEL_IDS),
+            "whitelist_words": cls.WHITELIST_WORDS,
+            "blacklist_words": cls.BLACKLIST_WORDS,
         }
