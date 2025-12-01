@@ -1,4 +1,4 @@
-from bot.client import app, user_client
+from bot.client import app
 from bot.config import Config
 
-__all__ = ["app", "user_client", "Config"]
+__all__ = ["app", "Config"]
