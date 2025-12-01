@@ -2,22 +2,12 @@ FROM python:3.10-slim
 
 WORKDIR /app
 
-# Install system dependencies
-RUN apt-get update && apt-get install -y \
-    git \
-    && rm -rf /var/lib/apt/lists/*
+RUN apt-get update && apt-get install -y git && rm -rf /var/lib/apt/lists/*
 
-# Copy requirements
 COPY requirements.txt .
-
-# Install Python dependencies
 RUN pip install --no-cache-dir -r requirements.txt
 
-# Copy bot code
 COPY . .
-
-# Create directories
 RUN mkdir -p downloads thumbnails
 
-# Run bot - NO port exposure needed (Telegram bot)
 CMD ["python", "main.py"]
