@@ -1,5 +1,6 @@
 """
-Bot Command Handlers - Ultra Simple
+AutoRenamer Bot - Simple Handlers
+Ultra minimal bot for Koyeb
 """
 from pyrogram import filters
 from pyrogram.types import Message
@@ -15,65 +16,73 @@ def register_handlers(app):
     
     @app.on_message(filters.command("start") & owner_filter)
     async def start(client, message: Message):
-        await message.reply(
+        await message.reply_text(
             "🤖 **AutoRenamer Bot**\n\n"
             "Commands:\n"
             "/setsource <channel_id> - Set source channel\n"
             "/setdest <channel_id> - Set destination channel\n"
-            "/process - Start processing\n"
+            "/status - Show configuration\n"
             "/help - Show help"
         )
     
     @app.on_message(filters.command("help") & owner_filter)
     async def help_cmd(client, message: Message):
-        await message.reply(
+        await message.reply_text(
             "📖 **Help**\n\n"
-            "/setsource - Set where to download from\n"
-            "/setdest - Set where to upload to\n"
-            "/process - Start file processing\n"
-            "/status - Show current config"
+            "**Commands:**\n"
+            "/setsource <channel_id> - Set download source\n"
+            "/setdest <channel_id> - Set upload destination\n"
+            "/status - Show current configuration\n"
+            "/process - Start processing (when configured)\n\n"
+            "**Channel ID Format:**\n"
+            "-100XXXXXXXXXX (for channels)\n"
+            "@username (for public channels)"
         )
     
     @app.on_message(filters.command("status") & owner_filter)
     async def status(client, message: Message):
-        await message.reply(
-            f"📊 **Status**\n\n"
-            f"Source Channels: {len(Config.SOURCE_CHANNEL_IDS)}\n"
-            f"Destination Channels: {len(Config.DESTINATION_CHANNEL_IDS)}"
+        src = len(Config.SOURCE_CHANNEL_IDS)
+        dst = len(Config.DESTINATION_CHANNEL_IDS)
+        await message.reply_text(
+            f"📊 **Current Configuration**\n\n"
+            f"Source Channels: {src}\n"
+            f"Destination Channels: {dst}\n"
+            f"Status: {'Ready to process' if src > 0 and dst > 0 else 'Not configured'}"
         )
     
     @app.on_message(filters.command("setsource") & owner_filter)
     async def set_source(client, message: Message):
         if len(message.command) < 2:
-            await message.reply("Usage: /setsource <channel_id>")
+            await message.reply_text("Usage: /setsource <channel_id>")
             return
         
-        channel_id = message.command[1]
         try:
-            channel_id = int(channel_id)
+            channel_id = int(message.command[1])
             Config.SOURCE_CHANNEL_IDS = [channel_id]
-            await message.reply(f"✅ Source channel set to: {channel_id}")
+            await message.reply_text(f"✅ Source channel set to: {channel_id}")
         except ValueError:
-            await message.reply("❌ Invalid channel ID")
+            await message.reply_text("❌ Invalid channel ID")
     
     @app.on_message(filters.command("setdest") & owner_filter)
     async def set_dest(client, message: Message):
         if len(message.command) < 2:
-            await message.reply("Usage: /setdest <channel_id>")
+            await message.reply_text("Usage: /setdest <channel_id>")
             return
         
-        channel_id = message.command[1]
         try:
-            channel_id = int(channel_id)
+            channel_id = int(message.command[1])
             Config.DESTINATION_CHANNEL_IDS = [channel_id]
-            await message.reply(f"✅ Destination channel set to: {channel_id}")
+            await message.reply_text(f"✅ Destination channel set to: {channel_id}")
         except ValueError:
-            await message.reply("❌ Invalid channel ID")
+            await message.reply_text("❌ Invalid channel ID")
     
     @app.on_message(filters.command("process") & owner_filter)
-    async def process(client, message: Message):
+    async def process_cmd(client, message: Message):
         if not Config.SOURCE_CHANNEL_IDS or not Config.DESTINATION_CHANNEL_IDS:
-            await message.reply("❌ Please set source and destination channels first")
+            await message.reply_text("❌ Please set source and destination channels first")
             return
         
-        await message.reply("✅ Processing started (implementation pending)")
+        await message.reply_text(
+            "✅ Processing started\n"
+            "Implementation pending - will download and upload files"
+        )
