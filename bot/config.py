@@ -1,5 +1,5 @@
 """
-AutoRenamer Bot - Ultra Simple Config
+AutoRenamer Bot Configuration
 """
 
 class Config:
@@ -13,7 +13,7 @@ class Config:
     DOWNLOAD_DIR = "downloads"
     THUMBNAIL_DIR = "thumbnails"
     
-    # ============ CHANNEL SETTINGS (SET VIA COMMANDS) ============
+    # ============ CHANNEL SETTINGS ============
     SOURCE_CHANNEL_IDS = []
     DESTINATION_CHANNEL_IDS = []
     
