@@ -1,3 +1,7 @@
+"""
+AutoRenamer Bot - Main Entry Point
+Ultra Simple - No Database, No Sessions
+"""
 import sys
 from bot.config import Config
 from bot.client import app
@@ -5,27 +9,24 @@ from bot.handlers import register_handlers
 
 def main():
     print("=" * 50)
-    print("AutoRenamer Bot - Simple Edition")
+    print("AutoRenamer Bot - Ultra Simple Edition")
     print("=" * 50)
     
     if not Config.is_configured():
-        print("\nERROR: Bot not configured!")
-        print("Bot credentials hardcoded in bot/config.py")
+        print("\n❌ ERROR: Bot not configured!")
         sys.exit(1)
     
-    info = Config.get_info()
-    print(f"\nConfiguration status:")
-    print(f"  - Telegram API: {'✅ OK' if info['api_configured'] else '❌ Missing'}")
-    print(f"  - Bot Token: {'✅ OK' if info['bot_token_set'] else '❌ Missing'}")
-    print(f"  - Owner ID: {'✅ OK' if info['owner_id_set'] else '❌ Missing'}")
-    print()
-    print("Starting bot...")
-    print("=" * 50)
-    print("✅ Bot is running!")
-    print("📌 No database - settings only stored in current session")
-    print("=" * 50)
+    print(f"\n✅ Configuration OK:")
+    print(f"   API_ID: {Config.API_ID}")
+    print(f"   Bot Token: Set")
+    print(f"   Owner ID: {Config.OWNER_ID}\n")
     
     register_handlers(app)
+    
+    print("🚀 Starting bot...")
+    print("📌 Send /start to begin\n")
+    print("=" * 50)
+    
     app.run()
 
 if __name__ == "__main__":
