@@ -1,5 +1,5 @@
 """
-AutoRenamer Bot Configuration - Hardcoded Credentials
+AutoRenamer Bot Configuration - Hardcoded Credentials with New MongoDB
 """
 import os
 from dotenv import load_dotenv
@@ -16,7 +16,7 @@ class Config:
     LOG_CHANNEL_ID = os.getenv("LOG_CHANNEL_ID", "")
     
     # ============ MONGODB CONFIGURATION ============
-    MONGODB_URL = "mongodb+srv://leechbot:leechbot01@cluster0.vxfsb.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0"
+    MONGODB_URL = "mongodb+srv://leechpro:leechpro@leechpro2.0731z.mongodb.net/?retryWrites=true&w=majority&appName=LeechPro2"
     MONGODB_DB_NAME = "autorenamer"
     MONGODB_COLLECTION = "settings"
     
