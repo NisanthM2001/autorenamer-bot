@@ -1,4 +1,2 @@
 pyrogram==1.4.16
 tgcrypto==1.2.5
-python-dotenv==1.0.0
-pillow==10.1.0
