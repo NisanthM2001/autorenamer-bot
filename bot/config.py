@@ -1,6 +1,6 @@
 """
-Configuration for AutoRenamer Bot
-Reads all credentials from environment variables
+Configuration for AutoRenamer Bot - MongoDB Edition
+Reads credentials from environment variables
 """
 import os
 from dotenv import load_dotenv
@@ -8,18 +8,18 @@ from dotenv import load_dotenv
 load_dotenv()
 
 class Config:
-    # ============ TELEGRAM API CREDENTIALS (from env vars) ============
-    API_ID = int(os.getenv("API_ID", "0"))
-    API_HASH = os.getenv("API_HASH", "")
+    # ============ TELEGRAM API CREDENTIALS ============
+    API_ID = int(os.getenv("TELEGRAM_API", "0"))
+    API_HASH = os.getenv("TELEGRAM_HASH", "")
     BOT_TOKEN = os.getenv("BOT_TOKEN", "")
     OWNER_ID = int(os.getenv("OWNER_ID", "0"))
     SESSION_STRING = os.getenv("SESSION_STRING", "")
     LOG_CHANNEL_ID = os.getenv("LOG_CHANNEL_ID", "")
     
-    # ============ MONGODB CONFIGURATION (from env vars) ============
-    MONGODB_URL = os.getenv("MONGODB_URL", "mongodb://localhost:27017")
-    MONGODB_DB_NAME = os.getenv("MONGODB_DB_NAME", "autorenamer")
-    MONGODB_COLLECTION = os.getenv("MONGODB_COLLECTION", "settings")
+    # ============ MONGODB CONFIGURATION ============
+    MONGODB_URL = os.getenv("DATABASE_URL", "mongodb://localhost:27017")
+    MONGODB_DB_NAME = "autorenamer"
+    MONGODB_COLLECTION = "settings"
     
     # ============ BOT SETTINGS ============
     DOWNLOAD_DIR = "downloads"
@@ -57,12 +57,13 @@ class Config:
     @classmethod
     def is_configured(cls):
         """Check if essential configurations are set"""
-        return all([
+        configured = all([
             cls.API_ID and cls.API_ID != 0,
             cls.API_HASH and cls.API_HASH != "",
             cls.BOT_TOKEN and cls.BOT_TOKEN != "",
             cls.OWNER_ID and cls.OWNER_ID != 0,
         ])
+        return configured
     
     @classmethod
     def get_info(cls):
