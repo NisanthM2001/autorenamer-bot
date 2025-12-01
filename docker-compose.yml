@@ -1,0 +1,31 @@
+version: '3.8'
+
+services:
+  bot:
+    build: .
+    container_name: autorenamer-bot
+    environment:
+      - API_ID=${API_ID}
+      - API_HASH=${API_HASH}
+      - BOT_TOKEN=${BOT_TOKEN}
+      - OWNER_ID=${OWNER_ID}
+      - MONGODB_URL=${MONGODB_URL}
+    volumes:
+      - ./downloads:/app/downloads
+      - ./thumbnails:/app/thumbnails
+    restart: unless-stopped
+
+  mongodb:
+    image: mongo:latest
+    container_name: autorenamer-mongo
+    environment:
+      - MONGO_INITDB_ROOT_USERNAME=admin
+      - MONGO_INITDB_ROOT_PASSWORD=password
+    ports:
+      - "27017:27017"
+    volumes:
+      - mongo_data:/data/db
+    restart: unless-stopped
+
+volumes:
+  mongo_data:
