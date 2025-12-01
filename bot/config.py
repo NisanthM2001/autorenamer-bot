@@ -1,6 +1,5 @@
 """
-AutoRenamer Bot Configuration
-Reads credentials from environment variables
+AutoRenamer Bot Configuration - Hardcoded Credentials
 """
 import os
 from dotenv import load_dotenv
@@ -9,15 +8,17 @@ load_dotenv()
 
 class Config:
     # ============ TELEGRAM API CREDENTIALS ============
-    API_ID = int(os.getenv("TELEGRAM_API", "0"))
-    API_HASH = os.getenv("TELEGRAM_HASH", "")
-    BOT_TOKEN = os.getenv("BOT_TOKEN", "")
-    OWNER_ID = int(os.getenv("OWNER_ID", "0"))
+    API_ID = 25713073
+    API_HASH = "65a23aaa7a97f42475de52ed240af2f3"
+    BOT_TOKEN = "8155671926:AAFm2V87F76qj_gEm_gJFD-mknWHHzqGxzo"
+    OWNER_ID = 6927710017
     SESSION_STRING = os.getenv("SESSION_STRING", "")
     LOG_CHANNEL_ID = os.getenv("LOG_CHANNEL_ID", "")
     
     # ============ MONGODB CONFIGURATION ============
-    MONGODB_URL = os.getenv("DATABASE_URL", "mongodb://localhost:27017")
+    MONGODB_URL = "mongodb+srv://leechbot:leechbot01@cluster0.vxfsb.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0"
+    MONGODB_DB_NAME = "autorenamer"
+    MONGODB_COLLECTION = "settings"
     
     # ============ BOT SETTINGS ============
     DOWNLOAD_DIR = "downloads"
@@ -69,6 +70,7 @@ class Config:
             "api_configured": bool(cls.API_ID != 0 and cls.API_HASH),
             "bot_token_set": bool(cls.BOT_TOKEN),
             "owner_id_set": bool(cls.OWNER_ID != 0),
+            "mongodb_configured": bool(cls.MONGODB_URL),
             "source_channels": len(cls.SOURCE_CHANNEL_IDS),
             "destination_channels": len(cls.DESTINATION_CHANNEL_IDS),
             "whitelist_words": cls.WHITELIST_WORDS,
