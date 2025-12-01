@@ -1,67 +1,50 @@
+"""
+MongoDB Database Module for AutoRenamer Bot
+Replaces PostgreSQL with MongoDB for settings persistence
+"""
 import os
-import asyncio
-import psycopg2
-from psycopg2.extras import RealDictCursor
+import json
 from datetime import datetime
+from pymongo import MongoClient
+from pymongo.errors import ServerSelectionTimeoutError
 
-# PostgreSQL connection
-DATABASE_URL = os.getenv("DATABASE_URL", "")
+# MongoDB Connection
+MONGODB_URL = os.getenv("MONGODB_URL", "mongodb://localhost:27017")
+MONGODB_DB_NAME = os.getenv("MONGODB_DB_NAME", "autorenamer")
+MONGODB_COLLECTION = os.getenv("MONGODB_COLLECTION", "settings")
 
-def get_db_connection():
-    """Get PostgreSQL connection"""
-    try:
-        conn = psycopg2.connect(DATABASE_URL)
-        return conn
-    except Exception as e:
-        print(f"❌ PostgreSQL connection error: {e}")
-        return None
+client = None
+db = None
+settings_collection = None
 
 def init_db():
-    """Initialize database tables"""
-    conn = get_db_connection()
-    if not conn:
-        print("⚠️ Cannot initialize database - no connection")
-        return False
-    
+    """Initialize MongoDB connection"""
+    global client, db, settings_collection
     try:
-        cursor = conn.cursor()
+        client = MongoClient(MONGODB_URL, serverSelectionTimeoutMS=5000)
+        # Verify connection
+        client.admin.command('ping')
+        db = client[MONGODB_DB_NAME]
+        settings_collection = db[MONGODB_COLLECTION]
         
-        # Create settings table
-        cursor.execute("""
-            CREATE TABLE IF NOT EXISTS settings (
-                _id VARCHAR(50) PRIMARY KEY,
-                source_channels TEXT,
-                destination_channels TEXT,
-                whitelist_words TEXT,
-                blacklist_words TEXT,
-                removed_words TEXT,
-                file_prefix VARCHAR(255),
-                file_suffix VARCHAR(255),
-                remove_username BOOLEAN,
-                custom_caption TEXT,
-                start_link VARCHAR(255),
-                end_link VARCHAR(255),
-                process_above_2gb BOOLEAN,
-                parallel_downloads INTEGER,
-                updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-            )
-        """)
+        # Create index on _id for faster lookups
+        settings_collection.create_index("_id")
         
-        conn.commit()
-        print("✅ Database tables initialized")
+        print("✅ MongoDB connected successfully")
         return True
-    except Exception as e:
-        print(f"❌ Error initializing database: {e}")
+    except ServerSelectionTimeoutError:
+        print("⚠️ MongoDB connection timeout - using in-memory storage")
         return False
-    finally:
-        cursor.close()
-        conn.close()
+    except Exception as e:
+        print(f"⚠️ MongoDB error: {e} - using in-memory storage")
+        return False
 
 # Initialize on startup
 init_db()
 
 # In-memory fallback for settings
 in_memory_settings = {
+    "_id": "bot_settings",
     "source_channels": [],
     "destination_channels": [],
     "whitelist_words": [],
@@ -74,269 +57,100 @@ in_memory_settings = {
     "start_link": None,
     "end_link": None,
     "process_above_2gb": False,
-    "parallel_downloads": 1
+    "parallel_downloads": 1,
+    "custom_thumbnail": None,
+    "updated_at": datetime.now().isoformat()
 }
 
-def load_settings_sync():
-    """Synchronously load settings from PostgreSQL or memory at startup"""
-    global in_memory_settings
-    
-    conn = get_db_connection()
-    if conn:
-        try:
-            cursor = conn.cursor(cursor_factory=RealDictCursor)
-            cursor.execute("SELECT * FROM settings WHERE _id = %s", ("main_settings",))
-            row = cursor.fetchone()
-            
-            if row:
-                import json
-                in_memory_settings = {
-                    "source_channels": json.loads(row.get("source_channels") or "[]"),
-                    "destination_channels": json.loads(row.get("destination_channels") or "[]"),
-                    "whitelist_words": json.loads(row.get("whitelist_words") or "[]"),
-                    "blacklist_words": json.loads(row.get("blacklist_words") or "[]"),
-                    "removed_words": json.loads(row.get("removed_words") or "[]"),
-                    "file_prefix": row.get("file_prefix") or "",
-                    "file_suffix": row.get("file_suffix") or "",
-                    "remove_username": row.get("remove_username") or False,
-                    "custom_caption": row.get("custom_caption") or "",
-                    "start_link": row.get("start_link"),
-                    "end_link": row.get("end_link"),
-                    "process_above_2gb": row.get("process_above_2gb") or False,
-                    "parallel_downloads": row.get("parallel_downloads") or 1
-                }
-                print(f"✅ Settings loaded from PostgreSQL")
-                return in_memory_settings
-        except Exception as e:
-            print(f"❌ Error loading from PostgreSQL: {e}")
-        finally:
-            cursor.close()
-            conn.close()
-    
-    print(f"✅ Using in-memory settings")
-    return in_memory_settings
-
-async def load_settings():
-    """Load all settings from PostgreSQL or memory"""
-    global in_memory_settings
-    
-    conn = get_db_connection()
-    if conn:
-        try:
-            cursor = conn.cursor(cursor_factory=RealDictCursor)
-            cursor.execute("SELECT * FROM settings WHERE _id = %s", ("main_settings",))
-            row = cursor.fetchone()
-            
-            if row:
-                import json
-                return {
-                    "source_channels": json.loads(row.get("source_channels") or "[]"),
-                    "destination_channels": json.loads(row.get("destination_channels") or "[]"),
-                    "whitelist_words": json.loads(row.get("whitelist_words") or "[]"),
-                    "blacklist_words": json.loads(row.get("blacklist_words") or "[]"),
-                    "removed_words": json.loads(row.get("removed_words") or "[]"),
-                    "file_prefix": row.get("file_prefix") or "",
-                    "file_suffix": row.get("file_suffix") or "",
-                    "remove_username": row.get("remove_username") or False,
-                    "custom_caption": row.get("custom_caption") or "",
-                    "start_link": row.get("start_link"),
-                    "end_link": row.get("end_link"),
-                    "process_above_2gb": row.get("process_above_2gb") or False,
-                    "parallel_downloads": row.get("parallel_downloads") or 1
-                }
-        except Exception as e:
-            print(f"❌ Error loading settings from PostgreSQL: {e}")
-        finally:
-            cursor.close()
-            conn.close()
-    
-    return in_memory_settings
-
-async def save_settings(settings_dict):
-    """Save settings to PostgreSQL or memory"""
-    global in_memory_settings
-    import json
-    
-    in_memory_settings = settings_dict
-    
-    conn = get_db_connection()
-    if conn:
-        try:
-            cursor = conn.cursor()
-            
-            cursor.execute("""
-                INSERT INTO settings 
-                (_id, source_channels, destination_channels, whitelist_words, blacklist_words, removed_words,
-                 file_prefix, file_suffix, remove_username, custom_caption, start_link, end_link,
-                 process_above_2gb, parallel_downloads, updated_at)
-                VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
-                ON CONFLICT (_id) DO UPDATE SET
-                    source_channels = EXCLUDED.source_channels,
-                    destination_channels = EXCLUDED.destination_channels,
-                    whitelist_words = EXCLUDED.whitelist_words,
-                    blacklist_words = EXCLUDED.blacklist_words,
-                    removed_words = EXCLUDED.removed_words,
-                    file_prefix = EXCLUDED.file_prefix,
-                    file_suffix = EXCLUDED.file_suffix,
-                    remove_username = EXCLUDED.remove_username,
-                    custom_caption = EXCLUDED.custom_caption,
-                    start_link = EXCLUDED.start_link,
-                    end_link = EXCLUDED.end_link,
-                    process_above_2gb = EXCLUDED.process_above_2gb,
-                    parallel_downloads = EXCLUDED.parallel_downloads,
-                    updated_at = CURRENT_TIMESTAMP
-            """, (
-                "main_settings",
-                json.dumps(settings_dict.get("source_channels", [])),
-                json.dumps(settings_dict.get("destination_channels", [])),
-                json.dumps(settings_dict.get("whitelist_words", [])),
-                json.dumps(settings_dict.get("blacklist_words", [])),
-                json.dumps(settings_dict.get("removed_words", [])),
-                settings_dict.get("file_prefix", ""),
-                settings_dict.get("file_suffix", ""),
-                settings_dict.get("remove_username", False),
-                settings_dict.get("custom_caption", ""),
-                settings_dict.get("start_link"),
-                settings_dict.get("end_link"),
-                settings_dict.get("process_above_2gb", False),
-                settings_dict.get("parallel_downloads", 1),
-                datetime.utcnow()
-            ))
-            
-            conn.commit()
-        except Exception as e:
-            print(f"❌ Error saving settings to PostgreSQL: {e}")
-        finally:
-            cursor.close()
-            conn.close()
-
-async def update_setting(key, value):
+def update_setting(key, value):
     """Update a single setting"""
-    global in_memory_settings
-    import json
-    
-    in_memory_settings[key] = value
-    
-    # Load current settings and update
-    current = await load_settings()
-    current[key] = value
-    await save_settings(current)
-
-async def delete_setting(key):
-    """Delete a specific setting (reset to default)"""
-    global in_memory_settings
-    
-    defaults = {
-        "source_channels": [],
-        "destination_channels": [],
-        "whitelist_words": [],
-        "blacklist_words": [],
-        "removed_words": [],
-        "file_prefix": "",
-        "file_suffix": "",
-        "remove_username": False,
-        "custom_caption": "",
-        "start_link": None,
-        "end_link": None,
-        "process_above_2gb": False,
-        "parallel_downloads": 1
-    }
-    
-    if key in defaults:
-        in_memory_settings[key] = defaults[key]
-        current = await load_settings()
-        current[key] = defaults[key]
-        await save_settings(current)
-
-async def save_backup(settings_dict):
-    """Save settings to backup in PostgreSQL (replaces old backup)"""
-    import json
-    
-    conn = get_db_connection()
-    if conn:
-        try:
-            cursor = conn.cursor()
-            
-            cursor.execute("""
-                INSERT INTO settings 
-                (_id, source_channels, destination_channels, whitelist_words, blacklist_words, removed_words,
-                 file_prefix, file_suffix, remove_username, custom_caption, start_link, end_link,
-                 process_above_2gb, parallel_downloads, updated_at)
-                VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
-                ON CONFLICT (_id) DO UPDATE SET
-                    source_channels = EXCLUDED.source_channels,
-                    destination_channels = EXCLUDED.destination_channels,
-                    whitelist_words = EXCLUDED.whitelist_words,
-                    blacklist_words = EXCLUDED.blacklist_words,
-                    removed_words = EXCLUDED.removed_words,
-                    file_prefix = EXCLUDED.file_prefix,
-                    file_suffix = EXCLUDED.file_suffix,
-                    remove_username = EXCLUDED.remove_username,
-                    custom_caption = EXCLUDED.custom_caption,
-                    start_link = EXCLUDED.start_link,
-                    end_link = EXCLUDED.end_link,
-                    process_above_2gb = EXCLUDED.process_above_2gb,
-                    parallel_downloads = EXCLUDED.parallel_downloads,
-                    updated_at = CURRENT_TIMESTAMP
-            """, (
-                "backup_settings",
-                json.dumps(settings_dict.get("source_channels", [])),
-                json.dumps(settings_dict.get("destination_channels", [])),
-                json.dumps(settings_dict.get("whitelist_words", [])),
-                json.dumps(settings_dict.get("blacklist_words", [])),
-                json.dumps(settings_dict.get("removed_words", [])),
-                settings_dict.get("file_prefix", ""),
-                settings_dict.get("file_suffix", ""),
-                settings_dict.get("remove_username", False),
-                settings_dict.get("custom_caption", ""),
-                settings_dict.get("start_link"),
-                settings_dict.get("end_link"),
-                settings_dict.get("process_above_2gb", False),
-                settings_dict.get("parallel_downloads", 1),
-                datetime.utcnow()
-            ))
-            
-            conn.commit()
-            print("✅ Backup saved successfully to PostgreSQL")
+    try:
+        if settings_collection:
+            settings_collection.update_one(
+                {"_id": "bot_settings"},
+                {"$set": {key: value, "updated_at": datetime.now().isoformat()}},
+                upsert=True
+            )
+            print(f"✅ Setting updated: {key}")
             return True
-        except Exception as e:
-            print(f"❌ Error saving backup: {e}")
-            return False
-        finally:
-            cursor.close()
-            conn.close()
-    return False
-
-async def load_backup():
-    """Load settings from PostgreSQL backup"""
-    import json
+    except Exception as e:
+        print(f"⚠️ Error updating setting: {e}")
     
-    conn = get_db_connection()
-    if conn:
-        try:
-            cursor = conn.cursor(cursor_factory=RealDictCursor)
-            cursor.execute("SELECT * FROM settings WHERE _id = %s", ("backup_settings",))
-            row = cursor.fetchone()
-            
-            if row:
-                return {
-                    "source_channels": json.loads(row.get("source_channels") or "[]"),
-                    "destination_channels": json.loads(row.get("destination_channels") or "[]"),
-                    "whitelist_words": json.loads(row.get("whitelist_words") or "[]"),
-                    "blacklist_words": json.loads(row.get("blacklist_words") or "[]"),
-                    "removed_words": json.loads(row.get("removed_words") or "[]"),
-                    "file_prefix": row.get("file_prefix") or "",
-                    "file_suffix": row.get("file_suffix") or "",
-                    "remove_username": row.get("remove_username") or False,
-                    "custom_caption": row.get("custom_caption") or "",
-                    "start_link": row.get("start_link"),
-                    "end_link": row.get("end_link"),
-                    "process_above_2gb": row.get("process_above_2gb") or False,
-                    "parallel_downloads": row.get("parallel_downloads") or 1
-                }
-        except Exception as e:
-            print(f"❌ Error loading backup: {e}")
-        finally:
-            cursor.close()
-            conn.close()
-    return None
+    # Fallback to in-memory
+    in_memory_settings[key] = value
+    return True
+
+def save_settings(settings_dict):
+    """Save all settings at once"""
+    try:
+        if settings_collection:
+            settings_dict["_id"] = "bot_settings"
+            settings_dict["updated_at"] = datetime.now().isoformat()
+            settings_collection.replace_one(
+                {"_id": "bot_settings"},
+                settings_dict,
+                upsert=True
+            )
+            print(f"✅ Settings saved to MongoDB")
+            return True
+    except Exception as e:
+        print(f"⚠️ Error saving settings: {e}")
+    
+    # Fallback to in-memory
+    in_memory_settings.update(settings_dict)
+    return True
+
+def load_settings_sync():
+    """Load all settings (synchronous)"""
+    try:
+        if settings_collection:
+            doc = settings_collection.find_one({"_id": "bot_settings"})
+            if doc:
+                # Remove MongoDB _id field before returning
+                doc.pop("_id", None)
+                return doc
+    except Exception as e:
+        print(f"⚠️ Error loading settings: {e}")
+    
+    # Return in-memory settings
+    return {k: v for k, v in in_memory_settings.items() if k != "_id"}
+
+def save_backup():
+    """Save backup of all settings"""
+    try:
+        settings = load_settings_sync()
+        backup_path = "settings_backup.json"
+        with open(backup_path, 'w') as f:
+            json.dump(settings, f, indent=4, default=str)
+        print(f"✅ Settings backed up to {backup_path}")
+        return True
+    except Exception as e:
+        print(f"❌ Error creating backup: {e}")
+        return False
+
+def load_backup():
+    """Restore settings from backup"""
+    try:
+        backup_path = "settings_backup.json"
+        with open(backup_path, 'r') as f:
+            settings = json.load(f)
+        save_settings(settings)
+        print(f"✅ Settings restored from backup")
+        return True
+    except Exception as e:
+        print(f"❌ Error restoring backup: {e}")
+        return False
+
+def delete_all_settings():
+    """Clear all settings"""
+    try:
+        if settings_collection:
+            settings_collection.delete_many({})
+        in_memory_settings.clear()
+        in_memory_settings["_id"] = "bot_settings"
+        print("✅ All settings cleared")
+        return True
+    except Exception as e:
+        print(f"❌ Error clearing settings: {e}")
+        return False
+
