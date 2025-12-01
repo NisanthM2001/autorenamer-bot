@@ -1,4 +1,5 @@
 import sys
+import os
 from bot.config import Config
 from bot.client import app
 from bot.handlers import register_handlers
@@ -31,14 +32,12 @@ def main():
     
     if not Config.is_configured():
         print("\nERROR: Bot is not configured!")
-        print("\nPlease set the following environment variables in Koyeb:")
-        print("  - TELEGRAM_API: Your Telegram API ID")
-        print("  - TELEGRAM_HASH: Your Telegram API Hash")
+        print("\nPlease set the following in Koyeb Secrets:")
+        print("  - API_ID: 25713073")
+        print("  - API_HASH: Your API Hash")
         print("  - BOT_TOKEN: Your bot token from @BotFather")
         print("  - OWNER_ID: Your Telegram user ID")
-        print("  - DATABASE_URL: Your MongoDB connection string")
-        print("\nGet API credentials from: https://my.telegram.org")
-        print("=" * 50)
+        print("\n" + "=" * 50)
         sys.exit(1)
     
     # Load settings from database
@@ -56,6 +55,8 @@ def main():
     register_handlers(app)
     
     print("Starting bot...")
+    print("=" * 50)
+    print("✅ Bot is running! Send /start in Telegram to use it.")
     print("=" * 50)
     
     app.run()
