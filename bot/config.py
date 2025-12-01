@@ -5,15 +5,15 @@ All settings in one config file - no .env needed
 
 class Config:
     # ============ TELEGRAM API CREDENTIALS ============
-    API_ID = 12345  # Get from https://my.telegram.org
-    API_HASH = "your_api_hash_here"
-    BOT_TOKEN = "your_bot_token_here"
-    OWNER_ID = 123456789  # Your Telegram user ID
+    API_ID = "25713073"   # Get from https://my.telegram.org
+    API_HASH = "65a23aaa7a97f42475de52ed240af2f3" 
+    BOT_TOKEN = "8155671926:AAFm2V87F76qj_gEm_gJFD-mknWHHzqGxzo"
+    OWNER_ID = "6927710017"  # Your Telegram user ID
     SESSION_STRING = ""  # Optional: Pyrogram session string
     LOG_CHANNEL_ID = ""  # Optional: Channel ID for logging
     
     # ============ MONGODB CONFIGURATION ============
-    MONGODB_URL = "mongodb+srv://username:password@cluster0.mongodb.net/autorenamer?retryWrites=true&w=majority"
+    MONGODB_URL = "mongodb+srv://leechbot:leechbot01@cluster0.vxfsb.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0"
     MONGODB_DB_NAME = "autorenamer"
     MONGODB_COLLECTION = "settings"
     
@@ -54,10 +54,10 @@ class Config:
     def is_configured(cls):
         """Check if essential configurations are set"""
         return all([
-            cls.API_ID != 12345,
-            cls.API_HASH != "your_api_hash_here",
-            cls.BOT_TOKEN != "your_bot_token_here",
-            cls.OWNER_ID != 123456789,
+            cls.API_ID != "25713073",
+            cls.API_HASH != "65a23aaa7a97f42475de52ed240af2f3",
+            cls.BOT_TOKEN != "8155671926:AAFm2V87F76qj_gEm_gJFD-mknWHHzqGxzo",
+            cls.OWNER_ID != 6927710017,
             "mongodb" in cls.MONGODB_URL,
         ])
     
@@ -66,7 +66,7 @@ class Config:
         """Get configuration information"""
         return {
             "api_id": cls.API_ID,
-            "bot_token_configured": bool(cls.BOT_TOKEN != "your_bot_token_here"),
+            "bot_token_configured": bool(cls.BOT_TOKEN != "8155671926:AAFm2V87F76qj_gEm_gJFD-mknWHHzqGxzo"),
             "mongodb_configured": bool("mongodb" in cls.MONGODB_URL),
             "source_channels": len(cls.SOURCE_CHANNELS),
             "destination_channels": len(cls.DESTINATION_CHANNELS),
