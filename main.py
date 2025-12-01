@@ -20,22 +20,23 @@ def load_settings_from_database():
         Config.START_LINK = settings.get("start_link")
         Config.END_LINK = settings.get("end_link")
         Config.PROCESS_ABOVE_2GB = settings.get("process_above_2gb", False)
-        Config.PARALLEL_DOWNLOADS = settings.get("parallel_downloads", 1)
+        Config.MAX_PARALLEL_DOWNLOADS = settings.get("max_parallel_downloads", 1)
     except Exception as e:
         print(f"⚠️ Could not load settings: {e}")
 
 def main():
     print("=" * 50)
-    print("Channel File Processor Bot")
+    print("AutoRenamer Bot - MongoDB Edition")
     print("=" * 50)
     
     if not Config.is_configured():
         print("\nERROR: Bot is not configured!")
-        print("\nPlease set the following environment variables:")
-        print("  - API_ID: Your Telegram API ID")
-        print("  - API_HASH: Your Telegram API Hash")
+        print("\nPlease set the following environment variables in Koyeb:")
+        print("  - TELEGRAM_API: Your Telegram API ID")
+        print("  - TELEGRAM_HASH: Your Telegram API Hash")
         print("  - BOT_TOKEN: Your bot token from @BotFather")
         print("  - OWNER_ID: Your Telegram user ID")
+        print("  - DATABASE_URL: Your MongoDB connection string")
         print("\nGet API credentials from: https://my.telegram.org")
         print("=" * 50)
         sys.exit(1)
@@ -45,12 +46,11 @@ def main():
     
     info = Config.get_info()
     print(f"\nConfiguration status:")
-    print(f"  - API: {'✅ OK' if info['api_configured'] else '❌ Missing'}")
+    print(f"  - Telegram API: {'✅ OK' if info['api_configured'] else '❌ Missing'}")
     print(f"  - Bot Token: {'✅ OK' if info['bot_token_set'] else '❌ Missing'}")
+    print(f"  - Owner ID: {'✅ OK' if info['owner_id_set'] else '❌ Missing'}")
     print(f"  - Source Channels: {info['source_channels']} configured")
     print(f"  - Destination Channels: {info['destination_channels']} configured")
-    print(f"  - Whitelist: {len(info['whitelist_words'])} words")
-    print(f"  - Blacklist: {len(info['blacklist_words'])} words")
     print()
     
     register_handlers(app)
